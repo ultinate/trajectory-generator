@@ -38,6 +38,14 @@
   		</struct>
 
 	</struct>
+
+	<!--
+	How are the topics connected?
+	* poseDsr (ROS) -> ROSConPoseIn -> cmdCartPose (cartesianGenerator)
+	* CartesianPoseDes (cartesianGenerator) -> CartGen2FRI -> desCartPos (FRIServer)
+	* CartesianPoseMsr (cartesianGenerator) <- FRI2CartGen <- msrCartPos (FRIServer)
+	* msrCartPos (ROS) <- msrCartPos (FRIServer)
+	-->
 	
 	<struct name="FRIServer" type="lwr_fri::FRIComponent">
  		<struct name="Activity" type="NonPeriodicActivity">
