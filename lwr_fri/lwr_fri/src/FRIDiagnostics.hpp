@@ -17,38 +17,44 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <string>
+
 #include <rtt/TaskContext.hpp>
-#include <rtt/Ports.hpp>
-#include <diagnostic_updater/diagnostic_updater.h>
-#include <diagnostic_updater/publisher.h>
-#include <friComm.h>
-#include <ocl/ComponentLoader.hpp>
+#include <rtt/Port.hpp>
+#include <diagnostic_msgs/typekit/Types.h>
+#include <kuka_lwr_fri/friComm.h>
 
 namespace LWR{
+
+using namespace RTT;
 
   class FRIDiagnostics:public RTT::TaskContext{
   public:
     FRIDiagnostics(const std::string& name="FRIDiagnostics");
-    ~FRIDiagnostics();
+    virtual ~FRIDiagnostics();
 
-    virtual bool configureHook(){return true;};
+    virtual bool configureHook();
     virtual bool startHook(){return true;};
     virtual void updateHook();
     virtual void stopHook(){};
     virtual void cleanupHook(){};
 
   private:
-    RTT::ReadDataPort<tFriRobotState> RobotStatePort;
-    RTT::ReadDataPort<tFriIntfState> FriStatePort;
+
+    std::string prop_diagnostic_prefix;
+
+    InputPort<tFriRobotState> RobotStatePort;
+    InputPort<tFriIntfState> FriStatePort;
+
+    OutputPort<diagnostic_msgs::DiagnosticArray> port_diagnostic;
 
     tFriIntfState fristate;
     tFriRobotState robotstate;
 
-    ros::NodeHandle* nh;
+    diagnostic_msgs::DiagnosticArray diagnostic;
 
-    diagnostic_updater::Updater* updater;
-    void fri_robot_diagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat);
-    void fri_comm_diagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat);
+    void fri_robot_diagnostics();
+    void fri_comm_diagnostics();
   };
 }
     

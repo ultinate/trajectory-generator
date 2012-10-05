@@ -4,11 +4,20 @@
 .pydevproject
 *.pc
 */build/
+*/*/build/
 */lib/
+*/*/lib/
 */bin/
+*/*/bin/
+# compiling LWR creates some weird directories
+lwr_fri/kuka_lwr_fri/typekit/
+lwr_fri/lwr_fri/include/
+lwr_fri/lwr_fri/msg_gen/
+lwr_fri/lwr_fri/src/lwr_fri/
+lwr_fri/lwr_fri/src/orocos/
 
 # Proprietary header file
-lwr_fri/include/friComm.h
+lwr_fri/kuka_lwr_fri/friComm.h
 
 # Other (log) files
 .tb_history
@@ -18,3 +27,4 @@ trajectory_generator/deploy/orocos.log
 trajectory_generator/deploy/timeLog.txt
 trajectory_generator/deploy/reports.dat
 trajectory_generator/deploy/reportsCartSim.dat
+
