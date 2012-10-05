@@ -22,6 +22,12 @@
   		<simple name="name_id" type="string"><value>poseStampedCmd</value></simple>
 	</struct>
 	
+	<!--
+	How are the topics connected?
+	* poseDsr (ROS) -> ROSConPoseIn -> cmdCartPose (cartesianGenerator)
+	* CartesianPoseDes (cartesianGenerator) -> CartGen2CartGen -> CartesianPoseMsr (cartesianGenerator)
+	-->
+
 	<struct name="cartesianGenerator" type="trajectory_generator::CartesianGenerator">
 		<struct name="Activity" type="PeriodicActivity">
 			<simple name="Period" type="double"><value>0.02</value></simple>
