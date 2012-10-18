@@ -35,7 +35,6 @@ namespace trajectory_generator
 {
     using namespace RTT;
     using namespace KDL;
-    using namespace std;
 
     TrajectoryGenerator::TrajectoryGenerator(std::string name)
         : TaskContext(name,PreOperational)
@@ -43,7 +42,6 @@ namespace trajectory_generator
         //Creating TaskContext
 
         //Adding InputPorts
-
         this->addEventPort("JointPositionInput",input_jntPosPort, boost::bind(&TrajectoryGenerator::generateNewVelocityProfilesJntPosInput, this, _1));
         this->addPort("JointPositionMsr",msr_jntPosPort);
 
@@ -113,8 +111,8 @@ namespace trajectory_generator
 			if (abs(robotState.velocity[i]) > abs(vM[i]))
 			{
 				scale[i] = robotState.velocity[i]/vM[i];
-				cout << "The requested velocity is higher than it should. Rescaling from "
-						<< robotState.velocity[i] << " to " << vM[i] << " by a factor " << scale[i] << endl;
+				std::cout << "The requested velocity is higher than it should. Rescaling from "
+						<< robotState.velocity[i] << " to " << vM[i] << " by a factor " << scale[i] << std::endl;
 			}
 		}
 
@@ -125,27 +123,27 @@ namespace trajectory_generator
 				scaleM = scale[i];
 
 //		// See when the velocities have to be scaled
-//		cout << "vel:  " ;
+//		std::cout << "vel:  " ;
 //		for(int i=0; i<7; i++)
-//			cout << " " << robotState.velocity[i];
-//		cout << endl;
+//			std::cout << " " << robotState.velocity[i];
+//		std::cout << std::endl;
 //
-//		cout << "pos:  " ;
+//		std::cout << "pos:  " ;
 //		for(int i=0; i<7; i++)
-//			cout << " " << robotState.position[i];
-//		cout << endl;
+//			std::cout << " " << robotState.position[i];
+//		std::cout << std::endl;
 //
-//		cout << "vM:  " ;
+//		std::cout << "vM:  " ;
 //		for(int i=0; i<7; i++)
-//			cout << " " << vM[i];
-//		cout << endl;
+//			std::cout << " " << vM[i];
+//		std::cout << std::endl;
 //
-//		cout << "scale (vector):  " ;
+//		std::cout << "scale (vector):  " ;
 //		for(int i=0; i<7; i++)
-//			cout << " " << scale[i];
-//		cout << endl;
+//			std::cout << " " << scale[i];
+//		std::cout << std::endl;
 //
-//		cout << "scale:" << scaleM << endl;
+//		std::cout << "scale:" << scaleM << std::endl;
 
 
 		// Recalculate velocities in the Robot Space if the scale factor is greater than one
@@ -184,7 +182,7 @@ namespace trajectory_generator
     {
 		if(doSync==true && addFinalVel==true){
 			doSync = false;
-			cout << "Sync with non zero final velocities is not yet implemented" << endl;
+			std::cout << "Sync with non zero final velocities is not yet implemented" << std::endl;
 		}
     	std::cout << "TrajectoryGenerator::Trajectory generator running" << std::endl;
 
@@ -202,7 +200,7 @@ namespace trajectory_generator
     	time_passed = os::TimeService::Instance()->secondsSince(time_begin);
 
 #if DEBUG
-    	cout << "a new jnt pose arrived" << endl;
+    	std::cout << "a new jnt pose arrived" << std::endl;
 #endif
     	input_jntPosPort.read(cmdJntState);
 
@@ -215,7 +213,7 @@ namespace trajectory_generator
     	for(int i=0; i < 7; i++){
     		if(lastCommandedPoseJntPos[i]<p_min[i] || lastCommandedPoseJntPos[i]>p_max[i]){
     			//log(Info) << "Commanded joint position out of bounds" << endlog();
-    			cout << "Commanded joint position out of bounds " << lastCommandedPoseJntPos[i] << endl;
+    			std::cout << "Commanded joint position out of bounds " << lastCommandedPoseJntPos[i] << std::endl;
     			return false;
     		}
 
@@ -225,7 +223,7 @@ namespace trajectory_generator
     		// Then, if the motion due to deceleration/acceleration needed to stop_the_robot/reach_the_final_vel
     		// is higher than the distance that we have to the position limits, final state cannot be achieved
     		if (p_aux < 0.5*lastCommandedPoseJntVel[i]*lastCommandedPoseJntVel[i]/a_max[i]){
-    			cout << "Commanded final velocity out of bounds " << lastCommandedPoseJntVel[i] << endl;
+    			std::cout << "Commanded final velocity out of bounds " << lastCommandedPoseJntVel[i] << std::endl;
     			return false;
     		}
     	}
@@ -258,7 +256,7 @@ namespace trajectory_generator
     			maxDuration = motionProfile[i].Duration();
     	}
 
-    	timeLogger << maxDuration << endl;
+    	timeLogger << maxDuration << std::endl;
 
     	//Do sync
     	if(doSync){
@@ -270,14 +268,18 @@ namespace trajectory_generator
     	//Set times
     	time_begin = os::TimeService::Instance()->getTicks();
 #if DEBUG
-    	cout << "A new set of motion profiles were successfully created." << endl;
+    	std::cout << "A new set of motion profiles were successfully created." << std::endl;
 #endif
     	return true;
 
     }
 
 
-    bool TrajectoryGenerator::updateTG(void){
+    bool TrajectoryGenerator::updateTG(void)
+    {
+#if DEBUG
+    	std::cout << "start updateTG method" << std::endl;
+#endif
     	if (motionProfile.size()==7){
 			time_passed = os::TimeService::Instance()->secondsSince(time_begin);
 			log(Info) << time_passed << endlog();
@@ -290,9 +292,9 @@ namespace trajectory_generator
 			}
 			output_jntPosPort_toROS.write(jntState);
 #if DEBUG
-			log(Info) << jntPosCmd[0] << " " << jntPosCmd[1] << " " << jntPosCmd[2] << " "
-										<< jntPosCmd[3] << " " << jntPosCmd[4] << " " << jntPosCmd[5] << " "
-										<< jntPosCmd[6] << endlog();
+			log(Info) << jntPosCmd[0] << " " << jntPosCmd[1] << " " << jntPosCmd[2] 
+				<< " " << jntPosCmd[3] << " " << jntPosCmd[4] << " " << jntPosCmd[5] 
+				<< " " << jntPosCmd[6] << endlog();
 #endif
 			output_jntPosPort.write(jntPosCmd);
 			return true;

@@ -57,7 +57,7 @@ FRIComponent::FRIComponent(const std::string& name) :
 	this->addPort("JointPosition", port_joint_pos_msr);
 	this->addPort("JointTorque", port_joint_trq_msr);
 
-  this->addPort("DesiredJointPosition", port_joint_pos_des);
+	this->addPort("DesiredJointPosition", port_joint_pos_des);
 
 	this->addPort("CartesianPosition", port_cart_pos_msr);
 	this->addPort("CartesianWrench", port_cart_wrench_msr);
@@ -72,7 +72,7 @@ FRIComponent::FRIComponent(const std::string& name) :
 	this->addPort("CartesianWrenchCommand", port_cart_wrench_command);
 	this->addPort("CartesianImpedanceCommand", port_cart_impedance_command);
 
-  this->addPort("CommandPeriod", port_command_period);
+	this->addPort("CommandPeriod", port_command_period);
 	this->addPort("Jacobian", port_jacobian);
 
 	this->addProperty("udp_port", prop_local_port);
@@ -112,7 +112,7 @@ bool FRIComponent::configureHook() {
 	m_joint_pos.resize(LBR_MNJ);
 	m_joint_trq.resize(LBR_MNJ);
 
-  m_joint_pos_des.resize(LBR_MNJ);
+	m_joint_pos_des.resize(LBR_MNJ);
 
 	m_joint_states.name.resize(LBR_MNJ);
 	m_joint_states.position.resize(LBR_MNJ);
@@ -130,6 +130,15 @@ bool FRIComponent::configureHook() {
 	if (fri_create_socket() != 0)
 		return false;
 
+        //Add trajectoryGenerator as peer
+        if(this->hasPeer("trajectoryGenerator")){
+                updateGenerator = this->getPeer("trajectoryGenerator")->getOperation("updateTG");
+        }
+
+        if(this->hasPeer("cartesianGenerator")){
+                updateGenerator = this->getPeer("cartesianGenerator")->getOperation("updateCG");
+        }
+
 	provides()->addAttribute("counter", counter);
 	return true;
 }
@@ -140,6 +149,10 @@ bool FRIComponent::startHook() {
 }
 
 void FRIComponent::updateHook() {
+
+//DEBUG
+std::cout << "start FRIComponent::updateHook()" << std::endl;
+
 	//Read:
 	if (fri_recv() == 0) {
 
@@ -164,7 +177,7 @@ void FRIComponent::updateHook() {
 		port_robot_state.write(m_msr_data.robot);
 		port_fri_state.write(m_msr_data.intf);
 
-    //port_command_period.write(m_msr_data.intf.desiredCmdSampleTime);
+		//port_command_period.write(m_msr_data.intf.desiredCmdSampleTime);
 
 		//Put KRL data onto the ports(no parsing)
 		//port_from_krl.write(m_msr_data.krl);
@@ -211,21 +224,21 @@ void FRIComponent::updateHook() {
 		m_cartWrench.torque.x = m_msr_data.data.estExtTcpFT[5];
 		m_cartWrench.torque.y = m_msr_data.data.estExtTcpFT[4];
 		m_cartWrench.torque.z = m_msr_data.data.estExtTcpFT[3];
-	  port_cart_wrench_msr.write(m_cartWrench);
+		port_cart_wrench_msr.write(m_cartWrench);
 
-    for ( int i = 0; i < FRI_CART_VEC; i++)
-      for ( int j = 0; j < LBR_MNJ; j++)
-        jac(i,j) = m_msr_data.data.jacobian[i*LBR_MNJ+j];
-    //Kuka uses Tx, Ty, Tz, Rz, Ry, Rx convention, so we need to swap Rz and Rx
-    jac.data.row(3).swap(jac.data.row(5));
-    port_jacobian.write(jac);
+		for ( int i = 0; i < FRI_CART_VEC; i++)
+			for ( int j = 0; j < LBR_MNJ; j++)
+				jac(i,j) = m_msr_data.data.jacobian[i*LBR_MNJ+j];
 
-    for(unsigned int i=0;i<LBR_MNJ;i++) {
-      for(unsigned int j=0;j<LBR_MNJ;j++) {
-        	  m_massTmp(i,j)=m_msr_data.data.massMatrix[LBR_MNJ*i+j];
-      }
-    }
-    massMatrixPort.write(m_massTmp);
+		//Kuka uses Tx, Ty, Tz, Rz, Ry, Rx convention, so we need to swap Rz and Rx
+		jac.data.row(3).swap(jac.data.row(5));
+		port_jacobian.write(jac);
+
+		for(unsigned int i=0;i<LBR_MNJ;i++)
+			for(unsigned int j=0;j<LBR_MNJ;j++)
+				m_massTmp(i,j)=m_msr_data.data.massMatrix[LBR_MNJ*i+j];
+
+		massMatrixPort.write(m_massTmp);
 
 		//Fill in datagram to send:
 		m_cmd_data.head.datagramId = FRI_DATAGRAM_ID_CMD;
@@ -300,17 +313,30 @@ void FRIComponent::updateHook() {
 			//Valid ports in joint position and joint impedance mode
 			if (m_msr_data.robot.control == FRI_CTRL_POSITION
 					|| m_msr_data.robot.control == FRI_CTRL_JNT_IMP) {
+#if DEBUG
+std::cout << "if position control " << std::endl;
+#endif
+std::cout << "2 if position control " << std::endl;
 				//Read desired positions
 				if (port_joint_pos_command.read(m_joint_pos_command) == NewData) {
 					if (m_joint_pos_command.size() == LBR_MNJ) {
-						for (unsigned int i = 0; i < LBR_MNJ; i++)
-							m_cmd_data.cmd.jntPos[i]
-									= m_joint_pos_command[i];
+#if DEBUG
+std::cout << "if (updateGenerator()) " << std::endl;
+std::cout << "if (port_joint_pos_command.read(m_joint_pos_command) == NewData) " << m_joint_pos_command << std::endl;
+#endif
+						if (updateGenerator()) {
+							for (unsigned int i = 0; i < LBR_MNJ; i++)
+								m_cmd_data.cmd.jntPos[i] = m_joint_pos_command[i];
+						} else {
+							for (unsigned int i = 0; i < LBR_MNJ; i++)
+							{
+								//m_cmd_data.cmd.jntPos[i] = m_msr_data.data.jntPos[i];
+							}
+						}
 					} else
 						log(Warning) << "Size of "
 								<< port_joint_pos_command.getName()
 								<< " not equal to " << LBR_MNJ << endlog();
-
 				}
 				//Read desired velocities
 				if (port_joint_vel_command.read(m_joint_vel_command) == NewData) {
@@ -432,7 +458,7 @@ void FRIComponent::updateHook() {
 			}
 		}//End command mode
 
-    for (unsigned int i = 0; i < LBR_MNJ; i++) {
+		for (unsigned int i = 0; i < LBR_MNJ; i++) {
 		  m_joint_pos_des[i] = m_cmd_data.cmd.jntPos[i];
 		  port_joint_pos_des.write(m_joint_pos_des);
 		}
@@ -440,7 +466,7 @@ void FRIComponent::updateHook() {
 		//m_cmd_data.krl = m_toKRL;
 	fri_send();
 
-  port_command_period.write(m_msr_data.intf.desiredCmdSampleTime);
+	port_command_period.write(m_msr_data.intf.desiredCmdSampleTime);
 
 	}//End fri_recv succesfull
 	this->trigger();

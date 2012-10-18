@@ -108,7 +108,7 @@ private:
 	OutputPort<std::vector<double> > port_joint_pos_msr;
 	OutputPort<std::vector<double> > port_joint_trq_msr;
 
-  OutputPort<std::vector<double> > port_joint_pos_des;
+	OutputPort<std::vector<double> > port_joint_pos_des;
 
 	OutputPort<geometry_msgs::Pose>  port_cart_pos_msr;
 	OutputPort<geometry_msgs::Wrench> port_cart_wrench_msr;
@@ -135,7 +135,7 @@ private:
 	std::vector<double> m_joint_pos;
 	std::vector<double> m_joint_trq;
 
-  std::vector<double> m_joint_pos_des;
+	std::vector<double> m_joint_pos_des;
 
 	std::vector<double> m_joint_pos_command;
 	std::vector<double> m_joint_vel_command;
@@ -147,6 +147,8 @@ private:
 	uint16_t counter, fri_state_last;
 	struct sockaddr_in m_remote_addr;
 	socklen_t m_sock_addr_len;
+
+	RTT::OperationCaller<bool(void)> updateGenerator;
 };
 
 }//Namespace LWR
